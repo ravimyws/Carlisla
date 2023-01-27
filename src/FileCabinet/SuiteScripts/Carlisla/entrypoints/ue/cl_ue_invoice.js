@@ -313,9 +313,7 @@ define(['N/query', 'N/record', 'N/runtime'],
                             return;
                         } */
                         let savedVBS = []
-                        let memoCommissionText = `Sales order commission ${salesOrderCommission} and Account Commission ${vendorIOPCommission}.So calculated commission was ${primaryCommission}`
                         if (isAgency) {
-                            let memoStylist = 'Customer stylist is Agency'
                             let partner = vendor;
 
                             if (vendorIOPAgencyOwner === null) {
@@ -324,10 +322,9 @@ define(['N/query', 'N/record', 'N/runtime'],
                             }
 
                             if (vendor === vendorIOPAgencyOwner) {
-                                let memoVendorInfo = `Stylist same as Agency owner`;
                                 if (partnerSplit100percent) {
                                     //agenceyRegularorderVB(invoiceRecord.id, primaryCommission, partner);
-                                    let vbid = createVB(transactionObj.id, primaryCommission, vendorIOPAgencyOwner, brand, `${memoStylist} ${memoVendorInfo} 100%  ${memoCommissionText}`);
+                                    let vbid = createVB(transactionObj.id, primaryCommission, vendorIOPAgencyOwner, brand);
                                     savedVBS.push(vbid);
                                 } else if (partnerSplit50Percent) {
                                     /* let primaryCommissionSplit = primaryCommission * partnerSplit;
@@ -336,8 +333,7 @@ define(['N/query', 'N/record', 'N/runtime'],
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2); */
                                     let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                    memoCommissionText += ` 50% split commission ${primaryCommissionSplit}`
-                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand, `${memoStylist} ${memoVendorInfo} 50% ${memoCommissionText}`);
+                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
                                     savedVBS.push(vbid);
                                 } else {
                                     log.error("reason", `No Partner Spilt for Agency`);
@@ -348,16 +344,13 @@ define(['N/query', 'N/record', 'N/runtime'],
                             } else {
 
                                 if (partnerSplit100percent) {
-                                    let memoVendorInfo = `Stylist is 100% Partner Split`;
                                     //agenceyRegularorderVB(invoiceRecord.id, primaryCommission, partner);
-                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand, `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`);
+                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand);
                                     savedVBS.push(vbid);
                                 } else if (partnerSplit50Percent) {
-                                    let memoVendorInfo = `Stylist is 50% Partner Split`;
                                     let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                    memoCommissionText += ` 50% split commission ${primaryCommissionSplit}`;
-                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand, `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`);
-                                    let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand, `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`);
+                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
+                                    let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand);
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2);
                                 } else {
@@ -368,12 +361,10 @@ define(['N/query', 'N/record', 'N/runtime'],
                             }
 
                         } else if (isAssociate) {
-                            let memoStylist = 'Customer stylist is Associate'
                             let associate = vendor;
 
                             if (associateCommission === primaryCommission) {
-                                let memoVendorInfo = `Associate Commission and Calculated Commission are same`
-                                let vbid = createVB(transactionObj.id, associateCommission, associate, brand, `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`);
+                                let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
                                 savedVBS.push(vbid);
                             } else if (associateCommission < primaryCommission) {
                                 //let associateOwner = getAssociateOwner(vendorDetails, vendor, brand);
@@ -383,11 +374,9 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         log.error("reason", `No Account AgencyOwner`);
                                         return;
                                     }
-                                    
-                                    let memoVendorInfo = `Associate with no partner ,so Account commission is ${primaryCommission - associateCommission} and Associate Commission ${associateCommission} `;
-                                    let vbid = createVB(transactionObj.id, associateCommission, associate, brand, `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`);
+                                    let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
                                     //createVB(transactionObj.id, primaryCommission - associateCommission, associateOwner, brand);
-                                    let vbid2 = createVB(transactionObj.id, primaryCommission - associateCommission, vendorIOPAgencyOwner, brand, `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`);
+                                    let vbid2 = createVB(transactionObj.id, primaryCommission - associateCommission, vendorIOPAgencyOwner, brand);
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2);
                                 } else if (partnersData.isFifty) {
@@ -395,11 +384,9 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         log.error("reason", `No Account AgencyOwner`);
                                         return;
                                     }
-                                    let memoVendorInfo = `Associate with no partner ,so Account commission is ${primaryCommission - associateCommission} and Associate Commission ${associateCommission} `;
-                                    let memo = `${memoStylist} ${memoVendorInfo} ${memoCommissionText}`
-                                    let vbid = createVB(transactionObj.id, associateCommission, associate,brand,memo);
-                                    let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, vendorIOPAgencyOwner, brand,memo);
-                                    let vbid3 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, partnersData.fiftyPercentPartner.id, brand,memo);
+                                    let vbid = createVB(transactionObj.id, associateCommission, associate);
+                                    let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, vendorIOPAgencyOwner, brand);
+                                    let vbid3 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, partnersData.fiftyPercentPartner.id, brand);
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2);
                                     savedVBS.push(vbid3);
@@ -497,7 +484,7 @@ define(['N/query', 'N/record', 'N/runtime'],
             return rs.asMappedResults();
         }
 
-        function createVB(tranId, primaryCommission, vendorId, brand, memo) {
+        function createVB(tranId, primaryCommission, vendorId, brand) {
             log.error('createVB');
             let data = getAmountByAccountType(tranId);
             log.error('getAmountByAccountType', data);
