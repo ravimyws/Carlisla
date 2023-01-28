@@ -122,6 +122,7 @@ define(['N/query', 'N/record', 'N/runtime'],
 
             try {
                 log.error(scriptContext.type);
+                let savedVBS = [];
                 if (scriptContext.type === scriptContext.UserEventType.CREATE || scriptContext.type === scriptContext.UserEventType.COPY) {
                     let transactionObj = scriptContext.newRecord;
                     let recordId = transactionObj.id;
@@ -138,13 +139,13 @@ define(['N/query', 'N/record', 'N/runtime'],
 
                         let customer = transactionObj.getValue(constants.RECORDS.INVOICE.FIELDS.CUSTOMER);
 
-                        let customerRecord = record.load({
+                        /* let customerRecord = record.load({
                             type: record.Type.CUSTOMER,
                             id: customer,
                             isDynamic: true
-                        });
+                        }); */
 
-                        let vendor = customerRecord.getValue(constants.RECORDS.CUSTOMER.FIELDS.STYLIST);
+                        let vendor = transactionObj.getValue('custbody_ce_stylist');//customerRecord.getValue(constants.RECORDS.CUSTOMER.FIELDS.STYLIST);
 
                         let vendorRecord = getRecord(record.Type.VENDOR, vendor)
 
@@ -312,7 +313,7 @@ define(['N/query', 'N/record', 'N/runtime'],
                             log.error("reason", `No  Primary Commission, so no VB`);
                             return;
                         } */
-                        let savedVBS = []
+
                         if (isAgency) {
                             let partner = vendor;
 
@@ -362,7 +363,7 @@ define(['N/query', 'N/record', 'N/runtime'],
 
                         } else if (isAssociate) {
                             let associate = vendor;
-
+                            log.error('Associate commission info :salesOrderCommission,associateCommission,vendorIOPAgencyOwner,primaryCommission', { salesOrderCommission, associateCommission, vendorIOPAgencyOwner, primaryCommission });
                             if (associateCommission === primaryCommission) {
                                 let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
                                 savedVBS.push(vbid);
@@ -385,11 +386,19 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         return;
                                     }
                                     let vbid = createVB(transactionObj.id, associateCommission, associate);
-                                    let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, vendorIOPAgencyOwner, brand);
-                                    let vbid3 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, partnersData.fiftyPercentPartner.id, brand);
                                     savedVBS.push(vbid);
-                                    savedVBS.push(vbid2);
-                                    savedVBS.push(vbid3);
+                                    if (vendorIOPAgencyOwner == partnersData.fiftyPercentPartner.id) {
+                                        let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission), vendorIOPAgencyOwner, brand);
+                                        savedVBS.push(vbid2);
+                                    } else {
+
+
+                                        let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, vendorIOPAgencyOwner, brand);
+                                        let vbid3 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, partnersData.fiftyPercentPartner.id, brand);
+
+                                        savedVBS.push(vbid2);
+                                        savedVBS.push(vbid3);
+                                    }
                                 }
 
                             }
@@ -436,8 +445,24 @@ define(['N/query', 'N/record', 'N/runtime'],
                 }
             } catch (e) {
                 log.error('error while Cash Sale', e);
+                deletedAlreadyCreatedVBSIfError(savedVBS)
             }
 
+        }
+
+        function deletedAlreadyCreatedVBSIfError(savedVBS) {
+            try {
+                if (savedVBS.length > 0) {
+                    savedVBS.forEach((id) => {
+                        record.delete({
+                            type: record.Type.VENDOR_BILL,
+                            id: id
+                        })
+                    });
+                }
+            } catch (e) {
+                log.error('error while deleting VBS', e);
+            }
         }
 
         function getItemFromParameter() {
