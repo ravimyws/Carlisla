@@ -265,6 +265,9 @@ define(['N/query', 'N/record', 'N/runtime'],
                             log.error('constants.RECORDS.SALES_ORDER_TYPE.INSTANCE.REGULAR_ORDER', vendorIOPCommission);
                             primaryCommission = salesOrderCommission || vendorIOPCommissionObj;
                             log.error('ro pc', primaryCommission);
+                            let d = getAssociateAccountPartner(vendorDetails.accountNumberIOP, vendor, constants.CUSTOM_LISTS.STYLIST_TYPE.VALUES.AGENCY);
+                            partnersData = getAssociatePartnerByArray(d);
+                            log.error('partnersData', partnersData);
                             if ((!primaryCommission)) {
                                 log.error("reason", `Agency regular order and  primaryCommission NOT EXIST, so no VB`);
                                 return;
@@ -287,10 +290,10 @@ define(['N/query', 'N/record', 'N/runtime'],
                                 return;
                             }
                             if ((associateCommission > primaryCommission)) {
-                                if (partnersData.noPartner) {
+                                // if (partnersData.noPartner) {
                                     log.error("reason", `stylistCommission not exist or stylistCommission > IOP commission  , so no VB`);
                                     return;
-                                }
+                                // }
                             }
                             // } 
 
@@ -317,29 +320,23 @@ define(['N/query', 'N/record', 'N/runtime'],
                         if (isAgency) {
                             let partner = vendor;
 
-                            if (vendorIOPAgencyOwner === null) {
-                                log.error("reason", `No Account AgencyOwner`);
-                                return;
-                            }
-                            log.error('isAgency',{vendor,vendorIOPAgencyOwner});
+                            
+                            log.error('isAgency', {partnersData, salesOrderCommission, vendor, vendorIOPAgencyOwner, primaryCommission });
                             if (vendor === vendorIOPAgencyOwner) {
-                                if (partnerSplit100percent) {
-                                    //agenceyRegularorderVB(invoiceRecord.id, primaryCommission, partner);
-                                    let vbid = createVB(transactionObj.id, primaryCommission, vendorIOPAgencyOwner, brand);
-                                    savedVBS.push(vbid);
-                                } else if (partnerSplit50Percent) {
-                                    /* let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
+                                if (partnersData.isFifty) {  
+                                    if (vendorIOPAgencyOwner === null) {
+                                        log.error("reason", `No Account AgencyOwner`);
+                                        return;
+                                    }                              
+                                    let primaryCommissionSplit = primaryCommission * partnerSplit;
+                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partnersData.fiftyPercentPartner.id, brand);
                                     let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand);
                                     savedVBS.push(vbid);
-                                    savedVBS.push(vbid2); */
-                                    let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
+                                    savedVBS.push(vbid2);
+                                    
+                                }else{
+                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand);
                                     savedVBS.push(vbid);
-                                } else {
-                                    log.error("reason", `No Partner Spilt for Agency`);
-                                    /* let agencyOwner = getAgencyOwner(query, vendorDetails, vendor);
-                                    agenceyRegularorderVB(invoiceRecord.id, primaryCommission, agencyOwner); */
                                 }
 
                             } else {
@@ -349,6 +346,10 @@ define(['N/query', 'N/record', 'N/runtime'],
                                     let vbid = createVB(transactionObj.id, primaryCommission, partner, brand);
                                     savedVBS.push(vbid);
                                 } else if (partnerSplit50Percent) {
+                                    if (vendorIOPAgencyOwner === null) {
+                                        log.error("reason", `No Account AgencyOwner`);
+                                        return;
+                                    }
                                     let primaryCommissionSplit = primaryCommission * partnerSplit;
                                     let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
                                     let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand);
@@ -363,13 +364,13 @@ define(['N/query', 'N/record', 'N/runtime'],
 
                         } else if (isAssociate) {
                             let associate = vendor;
-                            log.error('Associate commission info :salesOrderCommission,associateCommission,vendorIOPAgencyOwner,primaryCommission', { salesOrderCommission, associateCommission, vendorIOPAgencyOwner, primaryCommission });
+                            log.error('Associate commission info :salesOrderCommission,associateCommission,vendorIOPAgencyOwner,primaryCommission', {partnersData, salesOrderCommission, associateCommission, vendorIOPAgencyOwner, primaryCommission });
                             if (associateCommission === primaryCommission) {
                                 let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
                                 savedVBS.push(vbid);
                             } else if (associateCommission < primaryCommission) {
+                                log.error('associateCommission < primaryCommission');
                                 //let associateOwner = getAssociateOwner(vendorDetails, vendor, brand);
-
                                 if (partnersData.isFifty) {
                                     if (vendorIOPAgencyOwner === null) {
                                         log.error("reason", `No Account AgencyOwner`);
@@ -405,28 +406,6 @@ define(['N/query', 'N/record', 'N/runtime'],
 
                         } else {
                             log.error('reason', 'Stylist is not associate or agency');
-                            /* let partner = vendor;
-
-                            if (vendorIOPAgencyOwner === null) {
-                                log.error("reason", `No Account AgencyOwner`);
-                                return;
-                            }
-
-                            if (partnerSplit100percent) {
-                                //agenceyRegularorderVB(invoiceRecord.id, primaryCommission, partner);
-                                createVB(transactionObj.id, primaryCommission, partner, brand);
-                            } else if (partnerSplit50Percent) {
-
-                                let agencyOwner = vendorIOPAgencyOwner //getAgencyOwner(query, vendorDetails, vendor);
-
-                                let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
-                                createVB(transactionObj.id, primaryCommissionSplit, agencyOwner, brand);
-                            } else {
-                                log.error("reason", `Regular order and unhandled condition`);
-                                /! let agencyOwner = getAgencyOwner(query, vendorDetails, vendor);
-                                agenceyRegularorderVB(invoiceRecord.id, primaryCommission, agencyOwner); !/
-                            } */
                         }
 
                         if (savedVBS.length > 0) {
@@ -637,12 +616,12 @@ define(['N/query', 'N/record', 'N/runtime'],
             return rec;
         }
 
-        function getAssociateAccountPartner(associateAccountIOP, AssociateVendor, agencyScriptId) {
+        function getAssociateAccountPartner(vendorAccountIOP, vendor, agencyScriptId) {
             let rs = query.runSuiteQL({
                 query: `SELECT v.id,TO_NUMBER(Trim(TRAILING '%' FROM BUILTIN.DF(v.custentity_ce_pn_split)))/100 as  partnersplit 
                                 FROM vendor v INNER JOIN customlist_ce_sty_type sy ON v.custentity_ce_sty_type  = sy.recordid
-                                where v.custentity_ce_stylist_acc_no =${associateAccountIOP} 
-                                and v.id <> ${AssociateVendor} 
+                                where v.custentity_ce_stylist_acc_no =${vendorAccountIOP} 
+                                and v.id <> ${vendor} 
                                 and v.custentity_ce_pn_split is not null
                                 and sy.scriptid IN ('${agencyScriptId}')
                                 and v.isinactive = 'F' order by partnersplit`
