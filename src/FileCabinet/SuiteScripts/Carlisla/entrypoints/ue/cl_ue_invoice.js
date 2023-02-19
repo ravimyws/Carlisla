@@ -119,10 +119,10 @@ define(['N/query', 'N/record', 'N/runtime'],
          * @since 2015.2
          */
         const afterSubmit = (scriptContext) => {
-
+            let savedVBS = [];
             try {
                 log.error(scriptContext.type);
-                let savedVBS = [];
+                
                 if (scriptContext.type === scriptContext.UserEventType.CREATE || scriptContext.type === scriptContext.UserEventType.COPY) {
                     let transactionObj = scriptContext.newRecord;
                     let recordId = transactionObj.id;
@@ -321,7 +321,7 @@ define(['N/query', 'N/record', 'N/runtime'],
                                 log.error("reason", `No Account AgencyOwner`);
                                 return;
                             }
-
+                            log.error('isAgency',{vendor,vendorIOPAgencyOwner});
                             if (vendor === vendorIOPAgencyOwner) {
                                 if (partnerSplit100percent) {
                                     //agenceyRegularorderVB(invoiceRecord.id, primaryCommission, partner);
@@ -370,17 +370,7 @@ define(['N/query', 'N/record', 'N/runtime'],
                             } else if (associateCommission < primaryCommission) {
                                 //let associateOwner = getAssociateOwner(vendorDetails, vendor, brand);
 
-                                if (partnersData.noPartner) {
-                                    if (vendorIOPAgencyOwner === null) {
-                                        log.error("reason", `No Account AgencyOwner`);
-                                        return;
-                                    }
-                                    let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
-                                    //createVB(transactionObj.id, primaryCommission - associateCommission, associateOwner, brand);
-                                    let vbid2 = createVB(transactionObj.id, primaryCommission - associateCommission, vendorIOPAgencyOwner, brand);
-                                    savedVBS.push(vbid);
-                                    savedVBS.push(vbid2);
-                                } else if (partnersData.isFifty) {
+                                if (partnersData.isFifty) {
                                     if (vendorIOPAgencyOwner === null) {
                                         log.error("reason", `No Account AgencyOwner`);
                                         return;
@@ -399,6 +389,16 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         savedVBS.push(vbid2);
                                         savedVBS.push(vbid3);
                                     }
+                                }else{
+                                    if (vendorIOPAgencyOwner === null) {
+                                        log.error("reason", `No Account AgencyOwner`);
+                                        return;
+                                    }
+                                    let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
+                                    //createVB(transactionObj.id, primaryCommission - associateCommission, associateOwner, brand);
+                                    let vbid2 = createVB(transactionObj.id, primaryCommission - associateCommission, vendorIOPAgencyOwner, brand);
+                                    savedVBS.push(vbid);
+                                    savedVBS.push(vbid2);
                                 }
 
                             }
@@ -517,7 +517,7 @@ define(['N/query', 'N/record', 'N/runtime'],
             let incomeLineObj = data.filter((e) => { return e.accounttype === "INCOME" })[0];
             let taxlineLineObj = data.filter((e) => { return e.taxline })[0];
             log.error('getAmountByAccountType', { data, incomeLineObj, discountLineObj, primaryCommission });
-            let venderBillAmount = incomeLineObj.totalamount * primaryCommission - (discountLineObj?.totalamount || 0) - (taxlineLineObj?.totalamount || 0);
+            let venderBillAmount = incomeLineObj.totalamount * primaryCommission - (discountLineObj?.totalamount || 0);// - (taxlineLineObj?.totalamount || 0);
             let item = getItemFromParameter();
             let quantity = 1;
 
