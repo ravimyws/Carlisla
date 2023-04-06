@@ -132,6 +132,7 @@ define(['N/query', 'N/record', 'N/runtime'],
 
                     let so = getRecord(record.Type.SALES_ORDER, createdFrom);
                     let salesOrderType = so ? so.getValue(constants.RECORDS.INVOICE.FIELDS.SALES_ORDER_TYPE) : null;
+                    let seasonIop = so ? so.getValue('custbody_ce_iop_season') : null;
 
 
                     if (salesOrderType) {
@@ -285,8 +286,8 @@ define(['N/query', 'N/record', 'N/runtime'],
                             // isAssociateRegularOrder = true;
                             primaryCommission = salesOrderCommission || vendorIOPCommissionObj;
                             log.error('ro pc', primaryCommission);
-                            if ((!primaryCommission) || !associateCommission) {
-                                log.error("reason", ` Associate primaryCommission NOT EXIST or associateCommission, so no VB`);
+                            if ((!primaryCommission)) {
+                                log.error("reason", ` Associate primaryCommission NOT EXIST, so no VB`);
                                 return;
                             }
                             if ((associateCommission > primaryCommission)) {
@@ -329,13 +330,13 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         return;
                                     }                              
                                     let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partnersData.fiftyPercentPartner.id, brand);
-                                    let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand);
+                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partnersData.fiftyPercentPartner.id, brand,seasonIop);
+                                    let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand,seasonIop);
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2);
                                     
                                 }else{
-                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand);
+                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand,seasonIop);
                                     savedVBS.push(vbid);
                                 }
 
@@ -343,7 +344,7 @@ define(['N/query', 'N/record', 'N/runtime'],
 
                                 if (partnerSplit100percent) {
                                     //agenceyRegularorderVB(invoiceRecord.id, primaryCommission, partner);
-                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand);
+                                    let vbid = createVB(transactionObj.id, primaryCommission, partner, brand,seasonIop);
                                     savedVBS.push(vbid);
                                 } else if (partnerSplit50Percent) {
                                     if (vendorIOPAgencyOwner === null) {
@@ -351,8 +352,8 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         return;
                                     }
                                     let primaryCommissionSplit = primaryCommission * partnerSplit;
-                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand);
-                                    let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand);
+                                    let vbid = createVB(transactionObj.id, primaryCommissionSplit, partner, brand,seasonIop);
+                                    let vbid2 = createVB(transactionObj.id, primaryCommissionSplit, vendorIOPAgencyOwner, brand,seasonIop);
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2);
                                 } else {
@@ -365,8 +366,15 @@ define(['N/query', 'N/record', 'N/runtime'],
                         } else if (isAssociate) {
                             let associate = vendor;
                             log.error('Associate commission info :salesOrderCommission,associateCommission,vendorIOPAgencyOwner,primaryCommission', {partnersData, salesOrderCommission, associateCommission, vendorIOPAgencyOwner, primaryCommission });
-                            if (associateCommission === primaryCommission) {
-                                let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
+                            
+                            if(!associateCommission){
+                                
+                                let vbid = createVB(transactionObj.id, primaryCommission, vendorIOPAgencyOwner, brand,seasonIop);
+                                savedVBS.push(vbid);
+                                
+                            }
+                            else if (associateCommission === primaryCommission) {
+                                let vbid = createVB(transactionObj.id, associateCommission, associate, brand,seasonIop);
                                 savedVBS.push(vbid);
                             } else if (associateCommission < primaryCommission) {
                                 log.error('associateCommission < primaryCommission');
@@ -376,16 +384,16 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         log.error("reason", `No Account AgencyOwner`);
                                         return;
                                     }
-                                    let vbid = createVB(transactionObj.id, associateCommission, associate);
+                                    let vbid = createVB(transactionObj.id, associateCommission, associate,brand,seasonIop);
                                     savedVBS.push(vbid);
                                     if (vendorIOPAgencyOwner == partnersData.fiftyPercentPartner.id) {
-                                        let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission), vendorIOPAgencyOwner, brand);
+                                        let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission), vendorIOPAgencyOwner, brand,seasonIop);
                                         savedVBS.push(vbid2);
                                     } else {
 
 
-                                        let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, vendorIOPAgencyOwner, brand);
-                                        let vbid3 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, partnersData.fiftyPercentPartner.id, brand);
+                                        let vbid2 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, vendorIOPAgencyOwner, brand,seasonIop);
+                                        let vbid3 = createVB(transactionObj.id, (primaryCommission - associateCommission) * 0.5, partnersData.fiftyPercentPartner.id, brand,seasonIop);
 
                                         savedVBS.push(vbid2);
                                         savedVBS.push(vbid3);
@@ -395,9 +403,9 @@ define(['N/query', 'N/record', 'N/runtime'],
                                         log.error("reason", `No Account AgencyOwner`);
                                         return;
                                     }
-                                    let vbid = createVB(transactionObj.id, associateCommission, associate, brand);
+                                    let vbid = createVB(transactionObj.id, associateCommission, associate, brand,seasonIop);
                                     //createVB(transactionObj.id, primaryCommission - associateCommission, associateOwner, brand);
-                                    let vbid2 = createVB(transactionObj.id, primaryCommission - associateCommission, vendorIOPAgencyOwner, brand);
+                                    let vbid2 = createVB(transactionObj.id, primaryCommission - associateCommission, vendorIOPAgencyOwner, brand,seasonIop);
                                     savedVBS.push(vbid);
                                     savedVBS.push(vbid2);
                                 }
@@ -488,7 +496,7 @@ define(['N/query', 'N/record', 'N/runtime'],
             return rs.asMappedResults();
         }
 
-        function createVB(tranId, primaryCommission, vendorId, brand) {
+        function createVB(tranId, primaryCommission, vendorId, brand,seasonIop) {
             log.error('createVB');
             let data = getAmountByAccountType(tranId);
             log.error('getAmountByAccountType', data);
@@ -504,6 +512,9 @@ define(['N/query', 'N/record', 'N/runtime'],
             bodyFields[constants.RECORDS.VENDOR_BILL.FIELDS.VENDOR] = vendorId;
             bodyFields[constants.RECORDS.VENDOR_BILL.FIELDS.RELATED_INVOICE] = tranId;
             bodyFields['class'] = brand;
+            if(seasonIop){
+                bodyFields['custbody_ce_iop_season'] = seasonIop;
+            }
 
             let line = {};
             line['item'] = item;
